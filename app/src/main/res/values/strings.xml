@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Pardhan Connect</string>
+    <string name="tagline">Connect Without Internet.</string>
+    <string name="phase1_badge">Phase 1: Bluetooth Foundation</string>
+
+    <!-- Bluetooth Strings -->
+    <string name="bluetooth_disabled_title">Bluetooth is Disabled</string>
+    <string name="bluetooth_disabled_msg">Pardhan Connect requires Bluetooth to discover and communicate with nearby devices off-grid.</string>
+    <string name="enable_bluetooth">Enable Bluetooth</string>
+    <string name="permission_denied_title">Bluetooth Permissions Required</string>
+    <string name="permission_denied_msg">Nearby scanning, advertising, and connection permissions are required for off-grid peer-to-peer networking.</string>
+    <string name="grant_permissions">Grant Permissions</string>
+
+    <!-- Navigation & Placeholders -->
+    <string name="nav_chats">Chats</string>
+    <string name="nav_groups">Groups</string>
+    <string name="nav_calls">Calls</string>
+    <string name="nav_status">Status</string>
+    <string name="nav_transfers">Transfers</string>
+    <string name="phase1_placeholder_title">Phase 1 Foundation Active</string>
+    <string name="phase1_placeholder_desc">Messaging, audio calls, and file transfers will be introduced in subsequent phases atop this validated RFCOMM mesh layer.</string>
+</resources>

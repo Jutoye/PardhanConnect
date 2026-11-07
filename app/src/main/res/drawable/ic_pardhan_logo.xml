@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Glowing background badge -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M16,24C16,15.16 23.16,8 32,8H64C72.84,8 80,15.16 80,24V72C80,80.84 72.84,88 64,88H32C23.16,88 16,80.84 16,72Z" />
+    <path
+        android:strokeColor="#10B981"
+        android:strokeWidth="1.5"
+        android:pathData="M16,24C16,15.16 23.16,8 32,8H64C72.84,8 80,15.16 80,24V72C80,80.84 72.84,88 64,88H32C23.16,88 16,80.84 16,72Z" />
+
+    <!-- Stylized Pardhan Mesh Signal "P" -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M34,26h10c5.5,0 10,4.5 10,10s-4.5,10 -10,10h-10v24h-5V26h5zm0,5v10h10c2.8,0 5,-2.2 5,-5s-2.2,-5 -5,-5h-10z" />
+    
+    <!-- Outer Bluetooth pulse rings -->
+    <path
+        android:strokeColor="#34D399"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M56,30c3.8,3.5 6,8.5 6,13.8s-2.2,10.3 -6,13.8" />
+    <path
+        android:strokeColor="#10B981"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M63,23c5.7,5.3 9.2,12.8 9.2,20.8s-3.5,15.5 -9.2,20.8" />
+</vector>
