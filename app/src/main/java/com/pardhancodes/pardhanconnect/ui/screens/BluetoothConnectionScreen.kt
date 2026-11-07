@@ -317,6 +317,8 @@ fun BluetoothConnectionScreen(
                     }
                 }
 
+                ConnectionState.Scanning -> { }
+
                 ConnectionState.Disconnected -> {
                     item {
                         Card(
