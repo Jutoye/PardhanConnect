@@ -22,10 +22,18 @@ class BluetoothPermissionManager(private val context: Context) {
     val bluetoothAdapter: BluetoothAdapter?
         get() = bluetoothManager?.adapter
 
-    private val _isBluetoothEnabled = MutableStateFlow(isBluetoothOn())
+    // Pure readers (no StateFlow access) so they are safe to call during property initialisation.
+    private fun readBluetoothOn(): Boolean = bluetoothAdapter?.isEnabled == true
+
+    private fun readPermissionsGranted(): Boolean =
+        getRequiredPermissions().all { permission ->
+            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        }
+
+    private val _isBluetoothEnabled = MutableStateFlow(readBluetoothOn())
     val isBluetoothEnabled: StateFlow<Boolean> = _isBluetoothEnabled.asStateFlow()
 
-    private val _hasAllPermissions = MutableStateFlow(checkPermissions())
+    private val _hasAllPermissions = MutableStateFlow(readPermissionsGranted())
     val hasAllPermissions: StateFlow<Boolean> = _hasAllPermissions.asStateFlow()
 
     /**
