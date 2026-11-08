@@ -10,7 +10,11 @@ import com.pardhancodes.pardhanconnect.data.model.PingPongResult
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONObject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +43,10 @@ class BluetoothConnectionManager(
 
     private var ioJob: Job? = null
     private val pingSequence = AtomicLong(1)
+
+    // Pings waiting for their PONG. Only the single read loop reads the socket;
+    // it completes these when a matching PONG arrives.
+    private val pendingPings = ConcurrentHashMap<Long, CompletableDeferred<Unit>>()
 
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
@@ -142,8 +150,13 @@ class BluetoothConnectionManager(
                 handshakeManager.respondToPing(packet, outStream)
             }
             PardhanProtocol.PacketType.PONG -> {
-                // PONG received during ping test
-                logPacket("Received PONG packet from peer")
+                val seq = try {
+                    JSONObject(packet.payloadAsString()).optLong("seq", -1L)
+                } catch (e: Exception) {
+                    -1L
+                }
+                logPacket("Received PONG packet from peer (seq $seq)")
+                pendingPings[seq]?.complete(Unit)
             }
             PardhanProtocol.PacketType.DISCONNECT -> {
                 logPacket("Peer requested disconnect")
@@ -157,6 +170,8 @@ class BluetoothConnectionManager(
 
     /**
      * Executes a bidirectional PING/PONG packet test over the live socket.
+     * The PING is written here; the PONG is read by the single IO read loop
+     * (two readers on one stream would steal each other's packets).
      */
     fun performPingTest(scope: CoroutineScope) {
         val currentState = _connectionState.value
@@ -170,13 +185,48 @@ class BluetoothConnectionManager(
             return
         }
 
-        val inStream = inputStream ?: return
         val outStream = outputStream ?: return
         val seq = pingSequence.getAndIncrement()
+        val waiter = CompletableDeferred<Unit>()
+        pendingPings[seq] = waiter
 
         logPacket("Tx [PING #$seq]: Probing peer latency...")
         scope.launch(Dispatchers.IO) {
-            val result = handshakeManager.sendPing(seq, inStream, outStream)
+            val start = System.currentTimeMillis()
+            val result = try {
+                val packet = PardhanProtocol.Packet(
+                    PardhanProtocol.PacketType.PING,
+                    PardhanProtocol.createPingPayload(seq)
+                )
+                synchronized(outStream) {
+                    outStream.write(PardhanProtocol.encodePacket(packet))
+                    outStream.flush()
+                }
+                val gotPong = withTimeoutOrNull(5000L) {
+                    waiter.await()
+                    true
+                } ?: false
+                val latency = System.currentTimeMillis() - start
+                if (gotPong) {
+                    PingPongResult(sequenceNumber = seq, latencyMs = latency, success = true)
+                } else {
+                    PingPongResult(
+                        sequenceNumber = seq,
+                        latencyMs = latency,
+                        success = false,
+                        errorMessage = "Timeout: no PONG within 5 seconds"
+                    )
+                }
+            } catch (e: Exception) {
+                PingPongResult(
+                    sequenceNumber = seq,
+                    latencyMs = System.currentTimeMillis() - start,
+                    success = false,
+                    errorMessage = e.localizedMessage ?: "PING IO error"
+                )
+            } finally {
+                pendingPings.remove(seq)
+            }
             _lastPingPongResult.value = result
             if (result.success) {
                 logPacket("Rx [PONG #$seq]: Success! Round-trip latency: ${result.latencyMs}ms")
